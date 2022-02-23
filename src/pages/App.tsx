@@ -2,7 +2,6 @@ import * as React from "react";
 import { useState, useRef, useEffect } from "react";
 import { LoremIpsum } from "lorem-ipsum";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import LazyLoad from "@senswap/react-lazyload";
 import style from "./App.module.less";
 
 const fakeText = new LoremIpsum({
@@ -16,13 +15,32 @@ const fakeText = new LoremIpsum({
   },
 });
 
-const fakeCardData = new Array(10).fill(0).map((_, i) =>
-  new Array(Math.ceil(Math.random() * 10) + 5).fill(0).map((__, j) => ({
+type CardType = {
+  title: String;
+  content: String;
+};
+
+const fakeCardData = new Array(30).fill(0).map((_, i) =>
+  new Array(Math.ceil(Math.random() * 20) + 5).fill(0).map((__, j) => ({
     title: `Card Name ${i}-${j}`,
     content: fakeText.generateParagraphs(10),
   }))
 );
-function Card(props: { title: String; content: String }) {
+
+function sortCards(cards: CardType[][]) {
+  const sortedCards = cards.sort((a, b) => a.length - b.length);
+  const leftCards = [];
+  const rightCards = [];
+
+  for (let i = 0; i < sortedCards.length; i += 1) {
+    if (i % 2) leftCards.push(cards[i]);
+    else rightCards.push(cards[i]);
+  }
+
+  return leftCards.concat(rightCards.reverse());
+}
+
+function Card(props: CardType) {
   const cardRef = useRef(null);
   const { title, content } = props;
 
@@ -35,13 +53,15 @@ function Card(props: { title: String; content: String }) {
 }
 
 function Board() {
+  const [fakeCards, _] = useState(() => sortCards(fakeCardData));
+
   return (
     <TransformWrapper minScale={0.5} centerOnInit>
       <TransformComponent
         contentClass={style.cards}
         wrapperClass={style.container}
       >
-        {fakeCardData.map((cards) => (
+        {fakeCards.map((cards) => (
           <div className={style.lane}>
             {cards.map((card) => (
               <Card title={card.title} content={card.content} />
